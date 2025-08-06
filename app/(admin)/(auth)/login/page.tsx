@@ -1,25 +1,42 @@
-import React from 'react';
+import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export default function Login() {
   return (
-    <form className="space-y-4">
-      <h1 className="text-2xl font-bold text-center">Login</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        className="w-full px-4 py-2 border rounded-lg"
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        className="w-full px-4 py-2 border rounded-lg"
-      />
-      <button
-        type="submit"
-        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-      >
-        Sign In
-      </button>
-    </form>
+    <>
+      <p className="text-lg font-medium mb-4">Login to your account</p>
+
+      <form className="space-y-4">
+        <div className="space-y-1">
+          <Label htmlFor="email">Email</Label>
+          <Input type="email" id="email" placeholder="Email" />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="password">Password</Label>
+          <Input type="password" id="password" placeholder="Password" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input type="checkbox" id="remember" />
+          <Label htmlFor="remember" className="cursor-pointer">
+            Remember me
+          </Label>
+        </div>
+
+        <Button className="w-full">Login</Button>
+
+        <div className="flex justify-between text-md">
+          <Link href="/forgot-password" className="hover:underline">
+            Forgot Password?
+          </Link>
+          <Link href="/register" className="hover:underline">
+            Register?
+          </Link>
+        </div>
+      </form>
+    </>
   );
 }
