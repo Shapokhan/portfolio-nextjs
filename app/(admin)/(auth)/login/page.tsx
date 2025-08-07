@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import PfButton from '@/components/pf/pf-button';
+import PfInputField from '@/components/pf/pf-input-field';
+import PfCheckbox from '@/components/pf/pf-checkbox';
 
 export default function Login() {
   return (
@@ -10,24 +10,20 @@ export default function Login() {
 
       <form className="space-y-4">
         <div className="space-y-1">
-          <Label htmlFor="email">Email</Label>
-          <Input type="email" id="email" placeholder="Email" />
+          <PfInputField name="email" label="Email" id="email" />
         </div>
-
         <div className="space-y-1">
-          <Label htmlFor="password">Password</Label>
-          <Input type="password" id="password" placeholder="Password" />
+          <PfInputField
+            name="password"
+            label="Password"
+            id="password"
+            type="password"
+          />
         </div>
-
-        <div className="flex items-center gap-2">
-          <input type="checkbox" id="remember" />
-          <Label htmlFor="remember" className="cursor-pointer">
-            Remember me
-          </Label>
-        </div>
-
-        <Button className="w-full">Login</Button>
-
+        <PfCheckbox id="remember" name="remember" label="Remember me" />
+        <PfButton variant="default" className="w-full">
+          Login
+        </PfButton>
         <div className="flex justify-between text-md">
           <Link href="/forgot-password" className="hover:underline">
             Forgot Password?
