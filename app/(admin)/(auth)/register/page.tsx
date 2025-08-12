@@ -5,7 +5,7 @@ import PfButton from '@/components/pf/pf-button';
 import PfInputField from '@/components/pf/pf-input-field';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterFormValues, registerSchema } from '@/schemas/registerSchema';
+import { RegisterFormValues, registerSchema } from '@/schemas/auth/registerSchema';
 
 export default function Register() {
   const {
@@ -22,7 +22,8 @@ export default function Register() {
   };
   return (
     <>
-      <p className="text-lg font-medium mb-4">Create your account</p>
+      <p className="text-lg font-medium mb-2">Create Account</p>
+      <p className="text-sm font-small mb-2">Sign up to get started.</p>
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <PfInputField
           register={register}
@@ -62,14 +63,9 @@ export default function Register() {
         <PfButton className="w-full" variant="default" type="submit">
           Register
         </PfButton>
-        <div className="flex justify-between text-md">
-          <Link href="/forgot-password" className="hover:underline">
-            Forgot Password?
-          </Link>
           <Link href="/login" className="hover:underline">
-            Login?
+            Already have an account? Login
           </Link>
-        </div>
       </form>
     </>
   );
