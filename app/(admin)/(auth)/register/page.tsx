@@ -9,7 +9,7 @@ import {
   RegisterFormValues,
   registerSchema,
 } from '@/schemas/auth/registerSchema';
-import { toast } from 'sonner';
+import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
 
 export default function Register() {
   const {
@@ -29,13 +29,13 @@ export default function Register() {
       });
       const result = await res.json();
       if (res.ok) {
-        toast.success(result.message || 'User registered successfully!');
+        showToast('success', result.message || 'User registered successfully!');
       } else {
-        toast.error(result.message || 'Something went wrong.');
+        showToast('error', result.message || 'Something went wrong.');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Network error. Please try again.');
+      showToast('error', 'Network error. Please try again.');
     }
   };
   return (
