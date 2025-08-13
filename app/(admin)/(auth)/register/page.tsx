@@ -9,6 +9,7 @@ import {
   RegisterFormValues,
   registerSchema,
 } from '@/schemas/auth/registerSchema';
+import { toast } from 'sonner';
 
 export default function Register() {
   const {
@@ -20,19 +21,21 @@ export default function Register() {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    console.log("On submit")
     try {
-      console.log("Before api hit")
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data), // includes passwordConfirm
       });
-
       const result = await res.json();
-      console.log('Result in frontend', result);
+      if (res.ok) {
+        toast.success(result.message || 'User registered successfully!');
+      } else {
+        toast.error(result.message || 'Something went wrong.');
+      }
     } catch (err) {
       console.error(err);
+      toast.error('Network error. Please try again.');
     }
   };
   return (
