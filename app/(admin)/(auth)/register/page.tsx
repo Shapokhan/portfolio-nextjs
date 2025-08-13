@@ -5,7 +5,10 @@ import PfButton from '@/components/pf/pf-button';
 import PfInputField from '@/components/pf/pf-input-field';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterFormValues, registerSchema } from '@/schemas/auth/registerSchema';
+import {
+  RegisterFormValues,
+  registerSchema,
+} from '@/schemas/auth/registerSchema';
 
 export default function Register() {
   const {
@@ -16,9 +19,21 @@ export default function Register() {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = (data: RegisterFormValues) => {
-    console.log('Form submitted:', data);
-    // Send `data` to API where you will hash the password
+  const onSubmit = async (data: RegisterFormValues) => {
+    console.log("On submit")
+    try {
+      console.log("Before api hit")
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data), // includes passwordConfirm
+      });
+
+      const result = await res.json();
+      console.log('Result in frontend', result);
+    } catch (err) {
+      console.error(err);
+    }
   };
   return (
     <>
@@ -63,9 +78,9 @@ export default function Register() {
         <PfButton className="w-full" variant="default" type="submit">
           Register
         </PfButton>
-          <Link href="/login" className="hover:underline">
-            Already have an account? Login
-          </Link>
+        <Link href="/login" className="hover:underline">
+          Already have an account? Login
+        </Link>
       </form>
     </>
   );
