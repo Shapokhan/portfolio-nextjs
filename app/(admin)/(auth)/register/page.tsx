@@ -10,8 +10,11 @@ import {
   registerSchema,
 } from '@/schemas/auth/registerSchema';
 import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -20,24 +23,38 @@ export default function Register() {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
+const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data), // includes passwordConfirm
+      const res = await fetch("/api/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
+
       const result = await res.json();
+
       if (res.ok) {
-        showToast('success', result.message || 'User registered successfully!');
+        // ✅ Auto-login after successful register
+        const loginResult = await signIn("credentials", {
+          redirect: false,
+          email: data.email,
+          password: data.password,
+        });
+
+        if (loginResult?.error) {
+          showToast("error", loginResult.error );
+        } else {
+          showToast("success", "Registered & logged in successfully!");
+          router.push("/dashboard"); // redirect after login
+        }
       } else {
-        showToast('error', result.message || 'Something went wrong.');
+        showToast("error", result.message || "Something went wrong.");
       }
-    } catch (err) {
-      console.error(err);
-      showToast('error', 'Network error. Please try again.');
+    } catch (err:any) {
+      showToast("error", `${err} Network error. Please try again later.`);
     }
   };
+
   return (
     <>
       <p className="text-lg font-medium mb-2">Create Account</p>

@@ -6,8 +6,12 @@ import PfCheckbox from '@/components/pf/pf-checkbox';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginFormValues, loginSchema } from '@/schemas/auth/loginSchema';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
 
 export default function Login() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -16,9 +20,19 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginFormValues) => {
+  const onSubmit = async (data: LoginFormValues) => {
     console.log('Form submitted:', data);
-    // Send `data` to API where you will hash the password
+    const res = await signIn('credentials', {
+      redirect: false, // we control redirect manually
+      email: data.email,
+      password: data.password,
+    });
+    if (res?.error) {
+      showToast('error', res?.error);
+    } else {
+      showToast('success', 'Login Successful');
+      router.push('/dashboard'); // redirect after login
+    }
   };
   return (
     <>
