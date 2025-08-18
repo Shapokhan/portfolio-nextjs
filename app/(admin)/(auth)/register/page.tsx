@@ -5,9 +5,17 @@ import PfButton from '@/components/pf/pf-button';
 import PfInputField from '@/components/pf/pf-input-field';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { RegisterFormValues, registerSchema } from '@/schemas/auth/registerSchema';
+import {
+  RegisterFormValues,
+  registerSchema,
+} from '@/schemas/auth/registerSchema';
+import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { mapAuthError } from '@/lib/authErrors';
 
 export default function Register() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -16,10 +24,38 @@ export default function Register() {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = (data: RegisterFormValues) => {
-    console.log('Form submitted:', data);
-    // Send `data` to API where you will hash the password
+const onSubmit = async (data: RegisterFormValues) => {
+    try {
+      const res = await fetch("/api/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        // ✅ Auto-login after successful register
+        const loginResult = await signIn("credentials", {
+          redirect: false,
+          email: data.email,
+          password: data.password,
+        });
+
+        if (loginResult?.error) {
+          showToast('error', mapAuthError(loginResult.error));
+        } else {
+          showToast("success", "Registered & logged in successfully!");
+          router.push("/dashboard"); // redirect after login
+        }
+      } else {
+        showToast("error", result.message || "Something went wrong.");
+      }
+    } catch (err:any) {
+      showToast("error", `${err} Network error. Please try again later.`);
+    }
   };
+
   return (
     <>
       <p className="text-lg font-medium mb-2">Create Account</p>
@@ -63,9 +99,9 @@ export default function Register() {
         <PfButton className="w-full" variant="default" type="submit">
           Register
         </PfButton>
-          <Link href="/login" className="hover:underline">
-            Already have an account? Login
-          </Link>
+        <Link href="/login" className="hover:underline">
+          Already have an account? Login
+        </Link>
       </form>
     </>
   );
