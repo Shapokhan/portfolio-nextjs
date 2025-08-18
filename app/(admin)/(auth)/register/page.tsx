@@ -12,6 +12,7 @@ import {
 import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { mapAuthError } from '@/lib/authErrors';
 
 export default function Register() {
   const router = useRouter();
@@ -42,7 +43,7 @@ const onSubmit = async (data: RegisterFormValues) => {
         });
 
         if (loginResult?.error) {
-          showToast("error", loginResult.error );
+          showToast('error', mapAuthError(loginResult.error));
         } else {
           showToast("success", "Registered & logged in successfully!");
           router.push("/dashboard"); // redirect after login

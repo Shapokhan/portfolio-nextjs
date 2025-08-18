@@ -1,22 +1,21 @@
-import NextAuth from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import { connectToDatabase } from '@/lib/mongodb';
-import User from '@/models/User';
-import { loginSchema } from '@/schemas/auth/loginSchema';
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { connectToDatabase } from "@/lib/mongodb";
+import User from "@/models/User";
+import { loginSchema } from "@/schemas/auth/loginSchema";
 
 export const {
   handlers: { GET, POST },
-  auth,
 } = NextAuth({
-  session: { strategy: 'jwt' },
+  session: { strategy: "jwt" },
 
   providers: [
     Credentials({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "password", type: "password" },
       },
       authorize: async (credentials) => {
         // Validate form data
@@ -29,19 +28,14 @@ export const {
         await connectToDatabase();
 
         // Find user
-        const user = (await User.findOne({ email }).lean()) as {
-          _id: string;
-          name: string;
-          email: string;
-          password: string;
-        } | null;
+        const user = await User.findOne({ email }).lean();
         if (!user || !user.password) return null;
 
         // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return null;
 
-        // Return user object (password excluded)
+        // Return user object (no password)
         return {
           id: String(user._id),
           name: user.name,
@@ -52,7 +46,7 @@ export const {
   ],
 
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
 
   callbacks: {
@@ -61,7 +55,9 @@ export const {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) (session.user as any).id = token.id;
+      if (session.user) {
+        (session.user as any).id = token.id;
+      }
       return session;
     },
   },
