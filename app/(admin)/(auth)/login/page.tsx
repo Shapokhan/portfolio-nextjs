@@ -9,6 +9,7 @@ import { LoginFormValues, loginSchema } from '@/schemas/auth/loginSchema';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { showToast } from '../../../../components/ReusableComponent/ShowToast/ShowToast';
+import { mapAuthError } from '@/lib/authErrors';
 
 export default function Login() {
   const router = useRouter();
@@ -21,14 +22,13 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    console.log('Form submitted:', data);
     const res = await signIn('credentials', {
       redirect: false, // we control redirect manually
       email: data.email,
       password: data.password,
     });
     if (res?.error) {
-      showToast('error', res?.error);
+      showToast('error', mapAuthError(res.error));
     } else {
       showToast('success', 'Login Successful');
       router.push('/dashboard'); // redirect after login
