@@ -13,7 +13,7 @@ const userSchema = new Schema<IUser>({
   password: { type: String, required: true },
 });
 
-// 👇 Explicitly type your model
+
 const User: Model<IUser> = models.User || model<IUser>('User', userSchema);
 
 export default User;

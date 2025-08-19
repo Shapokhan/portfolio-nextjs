@@ -15,6 +15,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { showToast } from "@/components/ReusableComponent/ShowToast/ShowToast";
 
 export type Product = {
   id: string;
@@ -119,13 +120,13 @@ export const columns: ColumnDef<Product>[] = [
           });
 
           if (!response.ok) {
-            throw new Error('Failed to delete product');
+            showToast('error', 'Failed to delete product');
           }
 
           router.refresh();
-          console.log('Product deleted successfully');
+          showToast('success','Product deleted successfully');
         } catch (error) {
-          console.error('Delete error:', error);
+          showToast('error','Product Cannot be deleted');
         } finally {
           setIsDeleting(false);
         }
