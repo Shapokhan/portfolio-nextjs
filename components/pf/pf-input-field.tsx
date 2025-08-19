@@ -3,47 +3,58 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  UseFormRegister,
+  FieldErrors,
+  FieldValues,
+  Path,
+} from 'react-hook-form';
+import { cn } from '@/lib/utils';
 
-type PfInputFieldProps = {
-  id: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
-  inputClassName?: string;
-  required?: boolean;
-  disabled?: boolean;
-  name:string;
-};
-
-const PfInputField: React.FC<PfInputFieldProps> = ({
-  id,
-  label,
-  type = 'text',
+const PfInputField = <T extends FieldValues>({
+  name,
   placeholder,
-  value,
-  onChange,
+  register,
+  errors,
+  label,
+  labelClasses,
+  required,
+  type = 'text',
   className,
   inputClassName,
-  required = false,
-  disabled = false,
-  name
+}: {
+  name: Path<T>; // Use Path<T> to ensure valid form field paths
+  placeholder: string; // Placeholder text for the input
+  register: UseFormRegister<T>; // Register function for the form
+  errors: FieldErrors<T>; // Validation errors
+  label?: string;
+  labelClasses?: string;
+  required?: boolean;
+  type?: string;
+  className?: string;
+  inputClassName?: string;
 }) => {
   return (
     <div className={`grid w-full max-w-sm items-center gap-2 ${className}`}>
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex space-x-1">
+        <Label htmlFor={name} className={cn('flex gap-1', labelClasses)}>
+          {label}
+        </Label>
+        {required && <span className="text-red-500">{'*'}</span>}
+      </div>
       <Input
-        id={id}
+        id={name}
         type={type}
         placeholder={placeholder}
-        value={value}
-        onChange={onChange}
         required={required}
-        disabled={disabled}
         className={inputClassName}
+        {...register(name)}
       />
+      {errors[name] && (
+        <span className="text-red-500 text-[11px]">
+          {errors[name]?.message as string}
+        </span>
+      )}
     </div>
   );
 };
