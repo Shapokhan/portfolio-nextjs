@@ -1,11 +1,20 @@
 // models/User.ts
-import { Schema, models, model } from 'mongoose';
+import { Schema, models, model, Document, Model } from 'mongoose';
 
-const userSchema = new Schema({
-  name: String,
-  email: { type: String, unique: true },
-  password: String,
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+}
+
+const userSchema = new Schema<IUser>({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
 });
 
-const User = models.User || model('User', userSchema);
+// 👇 Explicitly type your model
+const User: Model<IUser> = models.User || model<IUser>('User', userSchema);
+
 export default User;
+

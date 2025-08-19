@@ -11,45 +11,42 @@ import {
 } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 
-type PfInputFieldProps = {
-  id: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  register?: UseFormRegister<FieldValues>;
-  errors?: any;
-  value?: string;
-  className?: string;
-  inputClassName?: string;
-  required?: boolean;
-  disabled?: boolean;
-  name:string;
-};
-
-const PfInputField: React.FC<PfInputFieldProps> = ({
-  id,
-  label,
-  type = 'text',
+const PfInputField = <T extends FieldValues>({
+  name,
   placeholder,
   register,
   errors,
-  value,
+  label,
+  labelClasses,
+  required,
+  type = 'text',
   className,
   inputClassName,
-  required = false,
-  disabled = false,
-  name
+}: {
+  name: Path<T>; // Use Path<T> to ensure valid form field paths
+  placeholder: string; // Placeholder text for the input
+  register: UseFormRegister<T>; // Register function for the form
+  errors: FieldErrors<T>; // Validation errors
+  label?: string;
+  labelClasses?: string;
+  required?: boolean;
+  type?: string;
+  className?: string;
+  inputClassName?: string;
 }) => {
   return (
     <div className={`grid w-full max-w-sm items-center gap-2 ${className}`}>
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex space-x-1">
+        <Label htmlFor={name} className={cn('flex gap-1', labelClasses)}>
+          {label}
+        </Label>
+        {required && <span className="text-red-500">{'*'}</span>}
+      </div>
       <Input
-        id={id}
+        id={name}
         type={type}
         placeholder={placeholder}
-        value={value}
         required={required}
-        disabled={disabled}
         className={inputClassName}
         {...register(name)}
       />

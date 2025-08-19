@@ -1,3 +1,4 @@
+'use client';
 import {
   Home as HomeIcon,
   Plus as PlusIcon,
@@ -8,7 +9,7 @@ import {
   ChevronUp,
   Projector,
   ChevronDown,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -23,20 +24,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from "@/components/ui/sidebar";
-import Link from "next/link";
-import Image from "next/image";
+} from '@/components/ui/sidebar';
+import Link from 'next/link';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '@/components/ui/collapsible';
+import { signOut } from 'next-auth/react';
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: HomeIcon },
@@ -46,7 +48,6 @@ const menuItems = [
   { title: "Generate Documents", url: "/documents", icon: FileStack },
   { title: "Settings", url: "/settings", icon: SettingsIcon },
 ];
-
 export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="overflow-hidden">
@@ -56,7 +57,7 @@ export default function AppSidebar() {
             <SidebarMenuButton asChild>
               <Link href="/">
                 <Image src="/logo.png" alt="logo" width={20} height={20} />
-                <span>Kashif Anwar</span>
+                <span>Kashif Anwarr</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -78,7 +79,7 @@ export default function AppSidebar() {
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
-                  {item.title === "Inbox" && (
+                  {item.title === 'Inbox' && (
                     <SidebarMenuBadge>24</SidebarMenuBadge>
                   )}
                 </SidebarMenuItem>
@@ -99,7 +100,11 @@ export default function AppSidebar() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Account</DropdownMenuItem>
                 <DropdownMenuItem>Setting</DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                >
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
@@ -107,4 +112,4 @@ export default function AppSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-};
+}
