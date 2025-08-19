@@ -1,6 +1,14 @@
-import { Schema, model, models } from 'mongoose';
+import { Schema, model, models, Document, Model } from 'mongoose';
 
-const ProductSchema = new Schema({
+export interface IProduct extends Document {
+  name: string;
+  description?: string;
+  price: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const productSchema = new Schema<IProduct>({
   name: { type: String, required: true },
   description: { type: String, default: '' },
   price: { type: Number, required: true, min: 0 },
@@ -8,7 +16,6 @@ const ProductSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-// Check if model already exists, otherwise create it
-const Product = models.Product || model('Product', ProductSchema);
+const Product: Model<IProduct> = models.Product || model<IProduct>('Product', productSchema);
 
 export default Product;
