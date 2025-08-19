@@ -41,13 +41,13 @@ import {
 import { signOut } from 'next-auth/react';
 
 const menuItems = [
-  { title: 'Dashboard', url: '/', icon: HomeIcon },
-  { title: 'New Order', url: '/new-order', icon: PlusIcon },
-  { title: 'Order History', url: '/orders', icon: ClockIcon },
-  { title: 'Generate Documents', url: '/documents', icon: FileStack },
-  { title: 'Settings', url: '/settings', icon: SettingsIcon },
+  { title: "Dashboard", url: "/dashboard", icon: HomeIcon },
+  { title: "Products", url: "/dashboard/products", icon: PlusIcon },
+  { title: "New Order", url: "/new-order", icon: PlusIcon },
+  { title: "Order History", url: "/orders", icon: ClockIcon },
+  { title: "Generate Documents", url: "/documents", icon: FileStack },
+  { title: "Settings", url: "/settings", icon: SettingsIcon },
 ];
-
 export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="overflow-hidden">
