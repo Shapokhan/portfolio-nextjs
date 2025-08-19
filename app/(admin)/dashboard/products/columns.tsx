@@ -10,15 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export type Product = {
   id: string;
   name: string;
   description: string;
-  price: number
+  price: number;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export const columns: ColumnDef<Product>[] = [
@@ -26,31 +30,61 @@ export const columns: ColumnDef<Product>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         checked={
           table.getIsAllPageRowsSelected() ||
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
         checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
       />
     ),
+    enableSorting: false,
+    enableHiding: false,
   },
   {
     accessorKey: "name",
-    header: "Name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
   },
   {
     accessorKey: "description",
-    header: "Description"
+    header: "Description",
+    cell: ({ row }) => (
+      <div className="line-clamp-2 max-w-[300px]">
+        {row.getValue("description") || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "price",
-    header: () => <div className="text-right">Price</div>,
+    header: ({ column }) => (
+      <div className="text-right">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Price
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    ),
     cell: ({ row }) => {
       const price = parseFloat(row.getValue("price"));
       const formatted = new Intl.NumberFormat("en-US", {
@@ -62,9 +96,40 @@ export const columns: ColumnDef<Product>[] = [
     },
   },
   {
+    accessorKey: "createdAt",
+    header: "Created At",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("createdAt"));
+      return date.toLocaleDateString();
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const product = row.original;
+
+      const [isDeleting, setIsDeleting] = useState(false);
+      const router = useRouter();
+
+      const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+          const response = await fetch(`/api/products?id=${product.id}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete product');
+          }
+
+          router.refresh();
+          console.log('Product deleted successfully');
+        } catch (error) {
+          console.error('Delete error:', error);
+        } finally {
+          setIsDeleting(false);
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -76,14 +141,26 @@ export const columns: ColumnDef<Product>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/products/${product.id}`}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(product.id)}
             >
-              Copy product ID
+              Copy ID
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View product details</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

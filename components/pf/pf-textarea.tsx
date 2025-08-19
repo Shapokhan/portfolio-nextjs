@@ -3,13 +3,21 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  UseFormRegister,
+  FieldErrors,
+  FieldValues,
+  Path,
+} from 'react-hook-form';
+import { cn } from '@/lib/utils';
 
 type PfTextareaProps = {
   id: string;
   label: string;
   placeholder?: string;
+  register?: UseFormRegister<FieldValues>;
+  errors?: any;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   className?: string;
   textareaClassName?: string;
   required?: boolean;
@@ -22,8 +30,9 @@ const PfTextarea: React.FC<PfTextareaProps> = ({
   id,
   label,
   placeholder,
+  register,
+  errors,
   value,
-  onChange,
   className,
   textareaClassName,
   required = false,
@@ -38,13 +47,18 @@ const PfTextarea: React.FC<PfTextareaProps> = ({
         id={id}
         placeholder={placeholder}
         value={value}
-        onChange={onChange}
+        {...register(name)}
         required={required}
         disabled={disabled}
         className={textareaClassName}
         name={name}
         rows={rows}
       />
+      {errors[name] && (
+        <span className="text-red-500 text-[11px]">
+          {errors[name]?.message as string}
+        </span>
+      )}
     </div>
   );
 };

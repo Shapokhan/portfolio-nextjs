@@ -3,14 +3,22 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  UseFormRegister,
+  FieldErrors,
+  FieldValues,
+  Path,
+} from 'react-hook-form';
+import { cn } from '@/lib/utils';
 
 type PfInputFieldProps = {
   id: string;
   label: string;
   type?: string;
   placeholder?: string;
+  register?: UseFormRegister<FieldValues>;
+  errors?: any;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   inputClassName?: string;
   required?: boolean;
@@ -23,8 +31,9 @@ const PfInputField: React.FC<PfInputFieldProps> = ({
   label,
   type = 'text',
   placeholder,
+  register,
+  errors,
   value,
-  onChange,
   className,
   inputClassName,
   required = false,
@@ -39,11 +48,16 @@ const PfInputField: React.FC<PfInputFieldProps> = ({
         type={type}
         placeholder={placeholder}
         value={value}
-        onChange={onChange}
         required={required}
         disabled={disabled}
         className={inputClassName}
+        {...register(name)}
       />
+      {errors[name] && (
+        <span className="text-red-500 text-[11px]">
+          {errors[name]?.message as string}
+        </span>
+      )}
     </div>
   );
 };

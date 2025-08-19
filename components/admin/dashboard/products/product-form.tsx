@@ -7,28 +7,74 @@ import PfTextarea from "@/components/pf/pf-textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ProductFormValues, productSchema } from "@/schemas/products/productSchema";
+import { useRouter } from "next/navigation";
 
-export default function ProductForm() {
+interface ProductFormProps {
+  initialData?: {
+    id?: string;
+    name: string;
+    description: string;
+    price: number;
+  };
+}
+
+
+export default function ProductForm({ initialData }: ProductFormProps) {
+  const router = useRouter();
+
+  const isEditMode = !!initialData?.id;
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
+    reset
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       name: "",
       description: "",
-      price: undefined, // Important for number validation
+      price: null,
     },
   });
 
-  const onSubmit = (data: ProductFormValues) => {
-    console.log("Form submitted:", data);
+  const onSubmit = async (data: ProductFormValues) => {
+    try {
+      const url = isEditMode 
+        ? `/api/products?id=${initialData.id}`
+        : '/api/products';
+
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+
+      console.log(`Product ${isEditMode ? 'updated' : 'created'} successfully!`);
+      reset();
+      router.refresh(); // Refresh server components if needed
+      router.push('/dashboard/products'); // Redirect to products list
+    } catch (error) {
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} product`);
+      console.error('Submission error:', error);
+    }
   };
 
   return (
     <div className="rounded-md border bg-card p-6 shadow-sm">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Hidden ID field for edit mode */}
+        {isEditMode && (
+          <input type="hidden" {...register('id')} value={initialData.id} />
+        )}
         <div className="space-y-2">
           <PfInputField
             register={register}
@@ -65,7 +111,7 @@ export default function ProductForm() {
         </div>
 
         <div className="flex justify-end gap-4 pt-2">
-          <Link href="/admin/dashboard/products">
+          <Link href="/dashboard/products">
             <PfButton variant="outline" type="button">
               Cancel
             </PfButton>
@@ -74,7 +120,13 @@ export default function ProductForm() {
             variant="default"
             type="submit"
           >
-            Create Product
+            {isSubmitting 
+              ? isEditMode 
+                ? 'Updating...' 
+                : 'Creating...'
+              : isEditMode 
+                ? 'Update Product' 
+                : 'Create Product'}
           </PfButton>
         </div>
       </form>
