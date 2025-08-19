@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ProductFormValues, productSchema } from "@/schemas/products/productSchema";
 import { useRouter } from "next/navigation";
 import { showToast } from '@/components/ReusableComponent/ShowToast/ShowToast';
-import { mapAuthError } from '@/lib/authErrors';
 
 interface ProductFormProps {
   initialData?: {
@@ -59,13 +58,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       if (!response.ok) {
         throw new Error('Failed to create product');
       }
-showToast('success', `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
+        showToast('success', `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
       reset();
       router.refresh(); // Refresh server components if needed
       router.push('/dashboard/products'); // Redirect to products list
     } catch (error) {
       showToast('error', `Failed to ${isEditMode ? 'update' : 'create'} product`)
-      showToast('Submission error:', error);
+      showToast('error', error);
     }
   };
 
