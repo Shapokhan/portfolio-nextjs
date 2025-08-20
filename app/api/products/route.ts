@@ -5,27 +5,32 @@ import Product from '@/models/Product';
 export async function POST(request: Request) {
   try {
     await connectToDatabase();
-    
+
     const body = await request.json();
-    
-    // Validate the data (optional - since you're already validating on client)
-    if (!body.name || !body.price) {
+
+    // Validate
+    if (!body.name || !body.price || !body.image) {
       return NextResponse.json(
-        { error: "Name and price are required" },
+        { error: "Name, price, and image are required" },
         { status: 400 }
       );
     }
 
-    // Create new product
+    // Convert Base64 string to Buffer
+    const imageBuffer = Buffer.from(body.image, "base64");
+
+    console.log(imageBuffer);
+
     const newProduct = await Product.create({
       name: body.name,
-      description: body.description || '',
+      description: body.description || "",
       price: parseFloat(body.price),
+      image: imageBuffer, // 👈 save as Buffer
     });
 
     return NextResponse.json(newProduct, { status: 201 });
-    
   } catch (error: any) {
+    console.error("Error creating product:", error);
     return NextResponse.json(
       { error: error.message || "Failed to create product" },
       { status: 500 }
@@ -93,15 +98,31 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Validate image if provided
+    if (body.image && !isValidBase64Image(body.image)) {
+      return NextResponse.json(
+        { error: "Invalid image format" },
+        { status: 400 }
+      );
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      name: body.name,
+      description: body.description,
+      price: body.price,
+      updatedAt: new Date()
+    };
+
+    // Only update image if it's provided
+    if (body.image !== undefined) {
+      updateData.image = body.image;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
       { 
-        $set: {
-          name: body.name,
-          description: body.description,
-          price: body.price,
-          updatedAt: new Date()
-        }
+        $set: updateData
       },
       { new: true }
     );
@@ -153,5 +174,48 @@ export async function DELETE(request: Request) {
       { error: error.message || "Failed to delete product" },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to validate base64 image format
+// Helper function to validate base64 image format
+function isValidBase64Image(image: string): boolean {
+  if (!image || image === '' || image === null) return true; // Allow empty values
+  
+  // First, check if it's a valid data URL format
+  const dataUrlRegex = /^data:image\/(jpeg|jpg|png|gif|webp);base64,/;
+  if (!dataUrlRegex.test(image)) {
+    console.log('Invalid data URL format:', image.substring(0, 100));
+    return false;
+  }
+
+  try {
+    // Extract the base64 part
+    const base64Data = image.split(',')[1];
+    if (!base64Data) {
+      console.log('No base64 data found after comma');
+      return false;
+    }
+    
+    // Basic base64 validation - check if it contains only valid characters
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(base64Data)) {
+      console.log('Invalid base64 characters');
+      return false;
+    }
+    
+    // Try to decode to see if it's valid base64
+    const decoded = Buffer.from(base64Data, 'base64');
+    
+    // For images, we should get some data back
+    if (decoded.length === 0) {
+      console.log('Decoded data is empty');
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.log('Base64 decoding error:', error);
+    return false;
   }
 }
