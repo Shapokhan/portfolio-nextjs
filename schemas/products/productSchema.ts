@@ -8,7 +8,7 @@ export const productSchema = z.object({
   price: z.coerce
     .number()
     .min(1, { message: "Price must be at least 1" }),
-  image: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;
