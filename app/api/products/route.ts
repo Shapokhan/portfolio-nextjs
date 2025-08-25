@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from "@/lib/mongodb";
+import { connectToDatabase } from '@/lib/mongodb';
 import Product from '@/models/Product';
-
+import cloudinary from "@/lib/cloudinary";
 
 export async function POST(request: Request) {
   try {
@@ -10,35 +10,38 @@ export async function POST(request: Request) {
 
     if (!body.name || !body.price || !body.imageUrl) {
       return NextResponse.json(
-        { error: "Name, price, and imageUrl are required" },
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { error: 'Name, price, and imageUrl are required' },
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     // ✅ At this point, body.image should already be a Cloudinary URL (not base64)
-    if (!body.imageUrl.startsWith("http")) {
+    if (!body.imageUrl.startsWith('http')) {
       return NextResponse.json(
-        { error: "Invalid image URL" },
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { error: 'Invalid image URL' },
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     const newProduct = await Product.create({
       name: body.name,
-      description: body.description || "",
+      description: body.description || '',
       price: parseFloat(body.price),
-      imageUrl: body.imageUrl,   // ✅ Just save URL
+      imageUrl: body.imageUrl, // ✅ Just save URL
+      imagePublicId: body.imagePublicId,
     });
+
+    console.log(body);
 
     return NextResponse.json(newProduct, {
       status: 201,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error("Error creating product:", error);
+    console.error('Error creating product:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to create product" },
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { error: error.message || 'Failed to create product' },
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
@@ -48,17 +51,17 @@ export async function GET(request: Request) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
 
     const skip = (page - 1) * limit;
 
     const searchQuery = search
       ? {
           $or: [
-            { name: { $regex: search, $options: "i" } },
-            { description: { $regex: search, $options: "i" } },
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
           ],
         }
       : {};
@@ -77,9 +80,9 @@ export async function GET(request: Request) {
       pages: Math.ceil(total / limit),
     });
   } catch (error: any) {
-    console.error("Error fetching products:", error);
+    console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch products" },
+      { error: error.message || 'Failed to fetch products' },
       { status: 500 }
     );
   }
@@ -89,14 +92,26 @@ export async function PUT(request: Request) {
   try {
     await connectToDatabase();
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const id = searchParams.get('id');
     const body = await request.json();
-console.log("Put Request with updated image", body.imageUrl)
+
     if (!id) {
       return NextResponse.json(
-        { error: "Product ID is required" },
+        { error: 'Product ID is required' },
         { status: 400 }
       );
+    }
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // ✅ If image is updated, remove old one
+    if (
+      body.imagePublicId &&
+      body.imagePublicId !== existingProduct.imagePublicId
+    ) {
+      await cloudinary.uploader.destroy(existingProduct.imagePublicId);
     }
 
     const updateData: any = {
@@ -104,7 +119,8 @@ console.log("Put Request with updated image", body.imageUrl)
       description: body.description,
       price: body.price,
       updatedAt: new Date(),
-      imageUrl:body.imageUrl
+      imageUrl: body.imageUrl || existingProduct.imageUrl,
+      imagePublicId: body.imagePublicId || existingProduct.imagePublicId,
     };
 
     // ✅ Only update Cloudinary URL if provided
@@ -119,17 +135,14 @@ console.log("Put Request with updated image", body.imageUrl)
     );
 
     if (!updatedProduct) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     return NextResponse.json(updatedProduct);
   } catch (error: any) {
-    console.error("Error updating product:", error);
+    console.error('Error updating product:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to update product" },
+      { error: error.message || 'Failed to update product' },
       { status: 500 }
     );
   }
@@ -143,7 +156,7 @@ export async function DELETE(request: Request) {
 
     if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
       return NextResponse.json(
-        { error: "Valid product ID is required" },
+        { error: 'Valid product ID is required' },
         { status: 400 }
       );
     }
@@ -151,19 +164,20 @@ export async function DELETE(request: Request) {
     const deletedProduct = await Product.findByIdAndDelete(id);
 
     if (!deletedProduct) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    if (deletedProduct.imagePublicId) {
+      await cloudinary.uploader.destroy(deletedProduct.imagePublicId);
     }
 
     return NextResponse.json(
-      { success: true, message: "Product deleted successfully" },
+      { success: true, message: 'Product deleted successfully' },
       { status: 200 }
     );
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || "Failed to delete product" },
+      { error: error.message || 'Failed to delete product' },
       { status: 500 }
     );
   }

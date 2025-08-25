@@ -22,6 +22,7 @@ interface ProductFormProps {
     description: string;
     price: number;
     imageUrl?: string; // Cloudinary URL
+    imagePublicId?:string
   };
 }
 
@@ -46,6 +47,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       description: '',
       price: null,
       imageUrl: '',
+      imagePublicId: '',
     },
   });
 
@@ -106,6 +108,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
       const data = await res.json();
       setValue('imageUrl', data.secure_url, { shouldValidate: true });
+      setValue('imagePublicId', data.public_id, { shouldValidate: true });
     } catch (err) {
       console.error(err);
       setImageError('Failed to upload image. Try again.');
@@ -116,6 +119,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
   const removeImage = () => {
     setValue('imageUrl', '', { shouldValidate: true });
+    setValue('imagePublicId', '', { shouldValidate: true });
     setImageError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -124,6 +128,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     const finalData = {
       ...data,
       imageUrl: watch('imageUrl') || data.imageUrl || '',
+      imagePublicId: watch('imagePublicId') || data.imagePublicId || '',
     };
 
     console.log('Submitting product:', finalData); // should now always include imageUrl

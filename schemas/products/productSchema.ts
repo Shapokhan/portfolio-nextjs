@@ -9,6 +9,7 @@ export const productSchema = z.object({
     .number()
     .min(1, { message: "Price must be at least 1" }),
   imageUrl: z.string().optional(),
+  imagePublicId: z.string().optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;
