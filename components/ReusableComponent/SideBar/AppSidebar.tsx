@@ -42,8 +42,9 @@ import { signOut } from 'next-auth/react';
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: HomeIcon },
+  { title: "Users", url: "/dashboard/users", icon: PlusIcon },
   { title: "Products", url: "/dashboard/products", icon: PlusIcon },
-  { title: "New Order", url: "/new-order", icon: PlusIcon },
+  { title: "New Order", url: "/dashboard/orders/new", icon: PlusIcon },
   { title: "Order History", url: "/orders", icon: ClockIcon },
   { title: "Generate Documents", url: "/documents", icon: FileStack },
   { title: "Settings", url: "/settings", icon: SettingsIcon },
