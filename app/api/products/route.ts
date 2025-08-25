@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     await connectToDatabase();
     const body = await request.json();
 
-    if (!body.name || !body.price || !body.image) {
+    if (!body.name || !body.price || !body.imageUrl) {
       return NextResponse.json(
         { error: "Name, price, and image are required" },
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     // ✅ At this point, body.image should already be a Cloudinary URL (not base64)
-    if (!body.image.startsWith("http")) {
+    if (!body.imageUrl.startsWith("http")) {
       return NextResponse.json(
         { error: "Invalid image URL" },
         { status: 400, headers: { "Content-Type": "application/json" } }
