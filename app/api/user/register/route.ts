@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsedData = registerSchema.parse(body);
-    const { name, email, password } = parsedData;
+    const { name, email, password, role, isActive = true } = parsedData;
 
     await connectToDatabase();
 
@@ -19,8 +19,11 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({ name, email, password: hashedPassword });
+    console.log("Before: ", parsedData);
+    const user = new User({ name, email, password: hashedPassword, role, isActive });
     await user.save();
+
+    console.log("User registered successfully", user);
 
     return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
   } catch (error: any) {
