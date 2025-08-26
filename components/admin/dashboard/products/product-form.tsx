@@ -43,11 +43,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     reset,
     setValue,
   } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-    defaultValues: initialData || {
+    resolver: zodResolver(productSchema) as any, // 👈 fixes resolver mismatch
+    defaultValues: {
       name: '',
+      price: 0,
       description: '',
-      price: null,
       imageUrl: '',
       imagePublicId: '',
     },
@@ -185,8 +185,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           errors={errors}
           name="price"
           type="number"
-          step="1"
-          min="1"
           placeholder="0.00"
           label="Price"
           required
