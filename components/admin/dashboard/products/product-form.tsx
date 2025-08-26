@@ -12,7 +12,7 @@ import {
 } from '@/schemas/products/productSchema';
 import { useRouter } from 'next/navigation';
 import { showToast } from '@/components/ReusableComponent/ShowToast/ShowToast';
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface ProductFormProps {
@@ -21,16 +21,19 @@ interface ProductFormProps {
     name: string;
     description: string;
     price: number;
-    imageUrl?: string; // Cloudinary URL
-    imagePublicId?:string
+    imageUrl?: string;
+    imagePublicId?: string;
   };
 }
 
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(
+    initialData?.imageUrl || null
+  );
   const [imageError, setImageError] = useState<string>('');
-  const [uploading, setUploading] = useState(false);
+  const [removeImage, setRemoveImage] = useState(false); // <-- new flag
   const isEditMode = !!initialData?.id;
 
   const {
@@ -39,7 +42,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    watch,
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData || {
@@ -51,24 +53,21 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     },
   });
 
-  // Watch image field directly
-  const imageUrl = watch('imageUrl');
-
   useEffect(() => {
     if (initialData) {
-      reset({
-        ...initialData,
-        imageUrl: watch('imageUrl') || initialData.imageUrl || '',
-      });
+      reset(initialData);
+      setPreview(initialData.imageUrl || null);
+      setRemoveImage(false);
     }
-  }, [initialData, reset, watch]);
+  }, [initialData, reset]);
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError('');
+    setRemoveImage(false); // user selected a new file → cancel "remove" intent
 
+    const file = e.target.files?.[0];
     if (!file) {
-      setValue('imageUrl', '', { shouldValidate: true });
+      setPreview(null);
       return;
     }
 
@@ -81,6 +80,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     ];
     if (!allowedTypes.includes(file.type)) {
       setImageError('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+      // keep the file input so user can re-select
       return;
     }
 
@@ -89,61 +89,47 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       return;
     }
 
-    try {
-      setUploading(true);
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append(
-        'upload_preset',
-        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET as string
-      );
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: 'POST', body: formData }
-      );
-
-      if (!res.ok) throw new Error('Cloudinary upload failed');
-
-      const data = await res.json();
-      setValue('imageUrl', data.secure_url, { shouldValidate: true });
-      setValue('imagePublicId', data.public_id, { shouldValidate: true });
-    } catch (err) {
-      console.error(err);
-      setImageError('Failed to upload image. Try again.');
-    } finally {
-      setUploading(false);
-    }
+    setPreview(URL.createObjectURL(file));
   };
 
-  const removeImage = () => {
+  const removeImageHandler = () => {
+    // mark intent to remove; on submit we'll tell backend with removeImage flag
+    setPreview(null);
+    setRemoveImage(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    // keep form values consistent (optional)
     setValue('imageUrl', '', { shouldValidate: true });
     setValue('imagePublicId', '', { shouldValidate: true });
-    setImageError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const onSubmit = async (data: ProductFormValues) => {
-    const finalData = {
-      ...data,
-      imageUrl: watch('imageUrl') || data.imageUrl || '',
-      imagePublicId: watch('imagePublicId') || data.imagePublicId || '',
-    };
-
-    console.log('Submitting product:', finalData); // should now always include imageUrl
-
     try {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('description', data.description || '');
+      formData.append('price', data.price?.toString() || '');
+
+      const file = fileInputRef.current?.files?.[0];
+      if (file) {
+        // new file uploaded → backend will replace old image
+        formData.append('image', file);
+      } else if (isEditMode && removeImage) {
+        // no new file and user clicked remove → tell backend to remove
+        formData.append('removeImage', 'true');
+      }
+
+      // include id in query string (you already do), but including in body is harmless
+      if (isEditMode && initialData?.id) {
+        formData.append('id', initialData.id);
+      }
+
       const url = isEditMode
-        ? `/api/products?id=${initialData.id}`
+        ? `/api/products?id=${initialData?.id}`
         : '/api/products';
 
-      const method = isEditMode ? 'PUT' : 'POST';
-
       const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalData),
+        method: isEditMode ? 'PUT' : 'POST',
+        body: formData,
       });
 
       if (!response.ok) throw new Error('Failed to save product');
@@ -152,7 +138,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         'success',
         `Product ${isEditMode ? 'updated' : 'created'} successfully!`
       );
+
+      // Reset states
       reset();
+      setPreview(null);
+      setRemoveImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
       router.refresh();
       router.push('/dashboard/products');
     } catch (error: any) {
@@ -160,7 +152,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         'error',
         `Failed to ${isEditMode ? 'update' : 'create'} product`
       );
-      showToast('error', error.message || error);
+      showToast('error', error?.message || error);
     }
   };
 
@@ -208,22 +200,18 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
             onChange={handleImageChange}
-            disabled={uploading}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
                        file:rounded-md file:border-0 file:text-sm file:font-semibold 
                        file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
           />
 
           {imageError && <p className="text-sm text-red-600">{imageError}</p>}
-          {uploading && (
-            <p className="text-sm text-gray-500">Uploading image...</p>
-          )}
 
-          {imageUrl && (
+          {preview && (
             <div className="relative inline-block mt-4">
               <div className="relative w-32 h-32 border rounded-md overflow-hidden">
                 <Image
-                  src={imageUrl}
+                  src={preview}
                   alt="Product preview"
                   fill
                   className="object-cover"
@@ -231,7 +219,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </div>
               <button
                 type="button"
-                onClick={removeImage}
+                onClick={removeImageHandler}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full 
                            w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
               >
