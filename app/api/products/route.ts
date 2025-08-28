@@ -8,9 +8,9 @@ export async function POST(request: Request) {
     await connectToDatabase();
     const body = await request.json();
 
-    if (!body.name || !body.price || !body.imageUrl) {
+    if (!body.name || !body.price || !body.stock || !body.imageUrl) {
       return NextResponse.json(
-        { error: 'Name, price, and imageUrl are required' },
+        { error: 'Name, price, stock, and imageUrl are required' },
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       name: body.name,
       description: body.description || '',
       price: parseFloat(body.price),
+      stock: parseFloat(body.stock),
       imageUrl: body.imageUrl, // ✅ Just save URL
       imagePublicId: body.imagePublicId,
     });
@@ -118,6 +119,7 @@ export async function PUT(request: Request) {
       name: body.name,
       description: body.description,
       price: body.price,
+      stock: body.stock,
       updatedAt: new Date(),
       imageUrl: body.imageUrl || existingProduct.imageUrl,
       imagePublicId: body.imagePublicId || existingProduct.imagePublicId,

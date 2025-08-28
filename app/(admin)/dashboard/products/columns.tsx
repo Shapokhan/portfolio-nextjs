@@ -22,6 +22,7 @@ export type Product = {
   name: string;
   description: string;
   price: number;
+  stock: number;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -95,6 +96,15 @@ export const columns: ColumnDef<Product>[] = [
 
       return <div className="text-right font-medium">{formatted}</div>;
     },
+  },
+  {
+    accessorKey: "stock",
+    header: "Stock",
+    cell: ({ row }) => (
+      <div className="line-clamp-2 max-w-[300px]">
+        {row.getValue("stock") || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "createdAt",

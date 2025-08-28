@@ -4,6 +4,7 @@ export interface IProduct extends Document {
   name: string;
   description?: string;
   price: number;
+  stock: number;
   imageUrl: string;       // ✅ Store Cloudinary URL
   imagePublicId: string;  // ✅ Store Cloudinary public_id (for deletion)
   createdAt: Date;
@@ -14,6 +15,7 @@ const productSchema = new Schema<IProduct>({
   name: { type: String, required: true },
   description: { type: String, default: '' },
   price: { type: Number, required: true },
+  stock: { type: Number, required: true },
   imageUrl: { type: String },
   imagePublicId: { type: String },
   createdAt: { type: Date, default: Date.now },

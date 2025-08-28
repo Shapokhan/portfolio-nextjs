@@ -42,7 +42,10 @@ const PfTextarea: React.FC<PfTextareaProps> = ({
 }) => {
   return (
     <div className={`grid w-full gap-2 ${className}`}>
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex space-x-1">
+        <Label htmlFor={id}>{label}</Label>
+        {required && <span className="text-red-500">{'*'}</span>}
+      </div>
       <Textarea
         id={id}
         placeholder={placeholder}
