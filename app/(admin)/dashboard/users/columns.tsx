@@ -178,7 +178,7 @@ export const columns: ColumnDef<User>[] = [
           <PfModal
             isOpen={isDetailOpen}
             onClose={() => setIsDetailOpen(false)}
-            title="Product Detail"
+            title="User Detail"
           >
             <UserDetail onClose={() => setIsDetailOpen(false)} user={user} />
           </PfModal>
