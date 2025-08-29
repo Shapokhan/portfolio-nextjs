@@ -26,6 +26,7 @@ const fetchProducts = async (): Promise<Product[]> => {
       name: product.name,
       description: product.description || '',
       price: product.price,
+            imageUrl:product.imageUrl,
       createdAt: product.createdAt
     }));
   } catch (error) {
