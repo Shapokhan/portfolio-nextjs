@@ -1,4 +1,4 @@
-import ProductForm from '@/components/admin/dashboard/products/product-form';
+import ProductForm from '@/components/admin/dashboard/products/ProductForm';
 import { connectToDatabase } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { notFound } from 'next/navigation';

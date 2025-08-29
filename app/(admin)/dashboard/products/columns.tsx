@@ -1,7 +1,6 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+'use client';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,13 +8,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { ColumnDef } from "@tanstack/react-table";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { showToast } from "@/components/ReusableComponent/ShowToast/ShowToast";
+} from '@/components/ui/dropdown-menu';
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
+import { ColumnDef } from '@tanstack/react-table';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { showToast } from '@/components/ReusableComponent/ShowToast/ShowToast';
+import PfModal from '@/components/pf/pf-modal';
+import ProductDetail from '@/components/admin/dashboard/products/ProductDetail';
+import ProductDelete from '@/components/admin/dashboard/products/ProductDelete';
 
 export type Product = {
   id: string;
@@ -26,15 +28,14 @@ export type Product = {
   createdAt?: string;
   updatedAt?: string;
 };
-
 export const columns: ColumnDef<Product>[] = [
   {
-    id: "select",
+    id: 'select',
     header: ({ table }) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
@@ -51,36 +52,38 @@ export const columns: ColumnDef<Product>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "name",
+    accessorKey: 'name',
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue('name')}</div>
+    ),
   },
   {
-    accessorKey: "description",
-    header: "Description",
+    accessorKey: 'description',
+    header: 'Description',
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[300px]">
-        {row.getValue("description") || "-"}
+        {row.getValue('description') || '-'}
       </div>
     ),
   },
   {
-    accessorKey: "price",
+    accessorKey: 'price',
     header: ({ column }) => (
       <div className="text-right">
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Price
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -88,10 +91,10 @@ export const columns: ColumnDef<Product>[] = [
       </div>
     ),
     cell: ({ row }) => {
-      const price = parseFloat(row.getValue("price"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "PKR",
+      const price = parseFloat(row.getValue('price'));
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'PKR',
       }).format(price);
 
       return <div className="text-right font-medium">{formatted}</div>;
@@ -101,25 +104,29 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: "stock",
     header: "Stock",
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[300px]">
+      <div>
         {row.getValue("stock") || "-"}
       </div>
     ),
   },
   {
-    accessorKey: "createdAt",
-    header: "Created At",
+    accessorKey: 'createdAt',
+    header: 'Created At',
     cell: ({ row }) => {
-      const date = new Date(row.getValue("createdAt"));
+      const date = new Date(row.getValue('createdAt'));
       return date.toLocaleDateString();
     },
   },
   {
-    id: "actions",
+    id: 'actions',
     cell: ({ row }) => {
       const product = row.original;
+      console.log(product);
 
       const [isDeleting, setIsDeleting] = useState(false);
+      const [isDetailOpen, setIsDetailOpen] = useState(false);
+      const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
       const router = useRouter();
 
       const handleDelete = async () => {
@@ -134,46 +141,80 @@ export const columns: ColumnDef<Product>[] = [
           }
 
           router.refresh();
-          showToast('success','Product deleted successfully');
+          showToast('success', 'Product deleted successfully');
+          setIsDeleteOpen(false);
         } catch (error) {
-          showToast('error','Product Cannot be deleted');
+          showToast('error', 'Product cannot be deleted');
         } finally {
           setIsDeleting(false);
         }
       };
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/dashboard/products/${product.id}`}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id)}
-            >
-              Copy ID
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/products/${product.id}`}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setIsDetailOpen(true)} // open modal
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setIsDeleteOpen(true)}
+                disabled={isDeleting}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(product.id)}
+              >
+                Copy ID
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Detail Modal start */}
+          <PfModal
+            isOpen={isDetailOpen}
+            onClose={() => setIsDetailOpen(false)}
+            title="Product Detail"
+          >
+            <ProductDetail
+              onClose={() => setIsDetailOpen(false)}
+              product={product}
+            />
+          </PfModal>
+          {/* Detail Modal close */}
+          {/* Delete Modal Start */}
+          <PfModal
+            isOpen={isDeleteOpen}
+            onClose={() => setIsDeleteOpen(false)}
+            title="Confirm Delete"
+          >
+            <ProductDelete
+              onClose={() => setIsDeleteOpen(false)}
+              onDelete={handleDelete}
+              isDeleting={isDeleting}
+            />
+          </PfModal>
+          {/* Delete Modal Close */}
+        </>
       );
     },
   },

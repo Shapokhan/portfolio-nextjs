@@ -11,23 +11,21 @@ import {
 } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 
-type PfTextareaProps = {
-  id: string;
+type PfTextareaProps<T extends FieldValues> = {
   label: string;
   placeholder?: string;
-  register?: UseFormRegister<FieldValues>;
-  errors?: any;
+  register: UseFormRegister<T>;
+  errors: FieldErrors<T>;
   value?: string;
   className?: string;
   textareaClassName?: string;
   required?: boolean;
   disabled?: boolean;
-  name?: string;
+  name: Path<T>; // ensures name is one of your schema keys
   rows?: number;
 };
 
-const PfTextarea: React.FC<PfTextareaProps> = ({
-  id,
+const PfTextarea = <T extends FieldValues>({
   label,
   placeholder,
   register,
@@ -38,16 +36,17 @@ const PfTextarea: React.FC<PfTextareaProps> = ({
   required = false,
   disabled = false,
   name,
-  rows = 3
-}) => {
+  rows = 3,
+}: PfTextareaProps<T>) => {
   return (
-    <div className={`grid w-full gap-2 ${className}`}>
+    <div className={cn('grid w-full gap-2', className)}>
       <div className="flex space-x-1">
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={name}>{label}</Label>
         {required && <span className="text-red-500">{'*'}</span>}
       </div>
+      
       <Textarea
-        id={id}
+        id={name}
         placeholder={placeholder}
         value={value}
         {...register(name)}
@@ -57,6 +56,7 @@ const PfTextarea: React.FC<PfTextareaProps> = ({
         name={name}
         rows={rows}
       />
+      
       {errors[name] && (
         <span className="text-red-500 text-[11px]">
           {errors[name]?.message as string}

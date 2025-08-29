@@ -3,7 +3,6 @@ import { User, columns } from "./columns";
 import { DataTable } from "./data-table";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { isUndefined } from "util";
 
 const fetchUsers = async (): Promise<User[]> => {
   try {

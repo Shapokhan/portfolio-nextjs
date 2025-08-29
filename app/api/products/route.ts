@@ -1,52 +1,68 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Product from '@/models/Product';
-import cloudinary from "@/lib/cloudinary";
+import cloudinary from '@/lib/cloudinary';
 
+// ✅ POST - Create Product
 export async function POST(request: Request) {
   try {
     await connectToDatabase();
-    const body = await request.json();
 
-    if (!body.name || !body.price || !body.stock || !body.imageUrl) {
+    const formData = await request.formData();
+    const name = formData.get('name') as string;
+    const description = (formData.get('description') as string) || '';
+    const price = formData.get('price') as string;
+    const stock = formData.get('stock') as string;
+    const file = formData.get('image') as File | null;
+
+    if (!name || !price || !stock) {
       return NextResponse.json(
-        { error: 'Name, price, stock, and imageUrl are required' },
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { error: 'Product Name and Price are required' },
+        { status: 400 }
       );
     }
 
-    // ✅ At this point, body.image should already be a Cloudinary URL (not base64)
-    if (!body.imageUrl.startsWith('http')) {
-      return NextResponse.json(
-        { error: 'Invalid image URL' },
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    let imageUrl = '';
+    let imagePublicId = '';
+
+    // ✅ Upload image if provided
+    if (file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploadedImage = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ folder: 'products' }, (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          })
+          .end(buffer);
+      });
+
+      imageUrl = uploadedImage.secure_url;
+      imagePublicId = uploadedImage.public_id;
     }
 
     const newProduct = await Product.create({
-      name: body.name,
-      description: body.description || '',
-      price: parseFloat(body.price),
-      stock: parseFloat(body.stock),
-      imageUrl: body.imageUrl, // ✅ Just save URL
-      imagePublicId: body.imagePublicId,
+      name: name,
+      description: description || '',
+      price: parseFloat(price),
+      stock: parseFloat(stock),
+      imageUrl: imageUrl, // ✅ Just save URL
+      imagePublicId: imagePublicId,
     });
 
-    console.log(body);
-
-    return NextResponse.json(newProduct, {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error: any) {
     console.error('Error creating product:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create product' },
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500 }
     );
   }
 }
 
+// ✅ GET (unchanged)
 export async function GET(request: Request) {
   try {
     await connectToDatabase();
@@ -67,13 +83,13 @@ export async function GET(request: Request) {
         }
       : {};
 
-    // Fetch products (image is now just a Cloudinary URL string)
     const products = await Product.find(searchQuery)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
     const total = await Product.countDocuments(searchQuery);
+
     return NextResponse.json({
       data: products,
       total,
@@ -81,7 +97,6 @@ export async function GET(request: Request) {
       pages: Math.ceil(total / limit),
     });
   } catch (error: any) {
-    console.error('Error fetching products:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch products' },
       { status: 500 }
@@ -89,12 +104,15 @@ export async function GET(request: Request) {
   }
 }
 
+// ✅ PUT - Update product with optional image handling
+// ✅ PUT - Update product with optional image handling (replace/remove/keep)
 export async function PUT(request: Request) {
   try {
     await connectToDatabase();
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const body = await request.json();
+    const formData = await request.formData();
 
     if (!id) {
       return NextResponse.json(
@@ -102,47 +120,79 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
     const existingProduct = await Product.findById(id);
     if (!existingProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
     }
 
-    // ✅ If image is updated, remove old one
-    if (
-      body.imagePublicId &&
-      body.imagePublicId !== existingProduct.imagePublicId
-    ) {
-      await cloudinary.uploader.destroy(existingProduct.imagePublicId);
+    const name = formData.get('name') as string;
+    const description =
+      (formData.get('description') as string) || existingProduct.description;
+    const price = formData.get('price') as string;
+    const stock = formData.get('stock') as string;
+    const file = formData.get('image') as File | null;
+
+    // 👇 Special field to explicitly remove image
+    const removeImage = formData.get('removeImage') === 'true';
+
+    let imageUrl = existingProduct.imageUrl;
+    let imagePublicId = existingProduct.imagePublicId;
+
+    // ✅ Case 1: Remove image
+    if (removeImage) {
+      if (existingProduct.imagePublicId) {
+        await cloudinary.uploader.destroy(existingProduct.imagePublicId);
+      }
+      imageUrl = '';
+      imagePublicId = '';
     }
 
-    const updateData: any = {
-      name: body.name,
-      description: body.description,
-      price: body.price,
-      stock: body.stock,
-      updatedAt: new Date(),
-      imageUrl: body.imageUrl || existingProduct.imageUrl,
-      imagePublicId: body.imagePublicId || existingProduct.imagePublicId,
-    };
+    // ✅ Case 2: Replace image with new file
+    else if (file) {
+      if (existingProduct.imagePublicId) {
+        await cloudinary.uploader.destroy(existingProduct.imagePublicId);
+      }
 
-    // ✅ Only update Cloudinary URL if provided
-    if (body.image) {
-      updateData.image = body.image;
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploadedImage = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ folder: 'products' }, (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          })
+          .end(buffer);
+      });
+
+      imageUrl = uploadedImage.secure_url;
+      imagePublicId = uploadedImage.public_id;
     }
+
+    // ✅ Case 3: Do nothing → keep old image (default fallthrough)
 
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { $set: updateData },
+      {
+        $set: {
+          name,
+          description,
+          price: parseFloat(price),
+          stock: parseFloat(stock),
+          imageUrl,
+          imagePublicId,
+          updatedAt: new Date(),
+        },
+      },
       { new: true }
     );
 
-    if (!updatedProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
     return NextResponse.json(updatedProduct);
   } catch (error: any) {
-    console.error('Error updating product:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update product' },
       { status: 500 }
@@ -150,17 +200,15 @@ export async function PUT(request: Request) {
   }
 }
 
+// ✅ DELETE (unchanged except cleanup Cloudinary)
 export async function DELETE(request: Request) {
   try {
     await connectToDatabase();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
-      return NextResponse.json(
-        { error: 'Valid product ID is required' },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: 'Valid product ID is required' }, { status: 400 });
     }
 
     const deletedProduct = await Product.findByIdAndDelete(id);
@@ -173,10 +221,7 @@ export async function DELETE(request: Request) {
       await cloudinary.uploader.destroy(deletedProduct.imagePublicId);
     }
 
-    return NextResponse.json(
-      { success: true, message: 'Product deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, message: 'Product deleted successfully' });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to delete product' },

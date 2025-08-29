@@ -11,24 +11,28 @@ export interface IProduct extends Document {
   updatedAt: Date;
 }
 
-const productSchema = new Schema<IProduct>({
-  name: { type: String, required: true },
-  description: { type: String, default: '' },
-  price: { type: Number, required: true },
-  stock: { type: Number, required: true },
-  imageUrl: { type: String },
-  imagePublicId: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-}, {
-  minimize: false
-});
+const productSchema = new Schema<IProduct>(
+  {
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    price: { type: Number, required: true },
+    stock: { type: Number, required: true },
+    imageUrl: { type: String, default: '' },
+    imagePublicId: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  {
+    minimize: false,
+  }
+);
 
 productSchema.pre<IProduct>('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-const Product: Model<IProduct> = models.Product || model<IProduct>('Product', productSchema);
+const Product: Model<IProduct> =
+  models.Product || model<IProduct>('Product', productSchema);
 
 export default Product;
