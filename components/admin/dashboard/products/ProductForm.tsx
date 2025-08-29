@@ -21,8 +21,9 @@ interface ProductFormProps {
     name: string;
     description: string;
     price: number;
-    imageUrl?: string;
-    imagePublicId?: string;
+    stock: number;
+    imageUrl?: string; // Cloudinary URL
+    imagePublicId?:string
   };
 }
 
@@ -48,6 +49,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       name: '',
       price: 0,
       description: '',
+      stock: 0,
       imageUrl: '',
       imagePublicId: '',
     },
@@ -187,6 +189,18 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           type="number"
           placeholder="0.00"
           label="Price"
+          required
+        />
+
+        <PfInputField
+          register={register}
+          errors={errors}
+          name="stock"
+          type="number"
+          step="1"
+          min="1"
+          placeholder="0.00"
+          label="Stock"
           required
         />
 

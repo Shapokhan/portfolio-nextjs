@@ -40,7 +40,11 @@ const PfTextarea = <T extends FieldValues>({
 }: PfTextareaProps<T>) => {
   return (
     <div className={cn('grid w-full gap-2', className)}>
-      <Label htmlFor={name}>{label}</Label>
+      <div className="flex space-x-1">
+        <Label htmlFor={name}>{label}</Label>
+        {required && <span className="text-red-500">{'*'}</span>}
+      </div>
+      
       <Textarea
         id={name}
         placeholder={placeholder}
@@ -52,6 +56,7 @@ const PfTextarea = <T extends FieldValues>({
         name={name}
         rows={rows}
       />
+      
       {errors[name] && (
         <span className="text-red-500 text-[11px]">
           {errors[name]?.message as string}

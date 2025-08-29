@@ -10,36 +10,56 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
+    const isActive = searchParams.get("isActive"); // New: filter by active status
+    const role = searchParams.get("role"); // New: filter by specific role
 
     const skip = (page - 1) * limit;
 
-     const searchQuery = {
-      role: { $ne: 'admin' }, // Exclude admin users
-      ...(search && {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      })
+    // Build search query
+    const searchQuery: any = {
+      role: { $ne: 'admin' }, // Exclude admin users by default
     };
 
-    // Fetch User
-    const users = await User.find(searchQuery)
+    // Add search criteria if provided
+    if (search) {
+      searchQuery.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }, // Added phone search
+      ];
+    }
+
+    // Filter by active status if provided
+    if (isActive !== null && isActive !== undefined) {
+      searchQuery.isActive = isActive === "true";
+    }
+
+    // Filter by specific role if provided (overrides the default admin exclusion)
+    if (role) {
+      searchQuery.role = role;
+    }
+
+    // Fetch employees (non-admin users by default)
+    const employees = await User.find(searchQuery)
+      .select("-password -__v") // Exclude sensitive fields
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
     const total = await User.countDocuments(searchQuery);
+    
     return NextResponse.json({
-      data: users,
+      data: employees,
       total,
       page,
       pages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
+      hasPrev: page > 1,
     });
   } catch (error: any) {
-    console.error("Error fetching users:", error);
+    console.error("Error fetching employees:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch users" },
+      { error: error.message || "Failed to fetch employees" },
       { status: 500 }
     );
   }

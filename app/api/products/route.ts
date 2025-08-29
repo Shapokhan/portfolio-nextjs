@@ -12,9 +12,10 @@ export async function POST(request: Request) {
     const name = formData.get('name') as string;
     const description = (formData.get('description') as string) || '';
     const price = formData.get('price') as string;
+    const stock = formData.get('stock') as string;
     const file = formData.get('image') as File | null;
 
-    if (!name || !price) {
+    if (!name || !price || !stock) {
       return NextResponse.json(
         { error: 'Product Name and Price are required' },
         { status: 400 }
@@ -43,11 +44,12 @@ export async function POST(request: Request) {
     }
 
     const newProduct = await Product.create({
-      name,
-      description,
+      name: name,
+      description: description || '',
       price: parseFloat(price),
-      imageUrl,
-      imagePublicId,
+      stock: parseFloat(stock),
+      imageUrl: imageUrl, // ✅ Just save URL
+      imagePublicId: imagePublicId,
     });
 
     return NextResponse.json(newProduct, { status: 201 });
@@ -131,6 +133,7 @@ export async function PUT(request: Request) {
     const description =
       (formData.get('description') as string) || existingProduct.description;
     const price = formData.get('price') as string;
+    const stock = formData.get('stock') as string;
     const file = formData.get('image') as File | null;
 
     // 👇 Special field to explicitly remove image
@@ -179,6 +182,7 @@ export async function PUT(request: Request) {
           name,
           description,
           price: parseFloat(price),
+          stock: parseFloat(stock),
           imageUrl,
           imagePublicId,
           updatedAt: new Date(),

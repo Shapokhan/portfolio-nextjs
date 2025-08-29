@@ -8,6 +8,9 @@ export const productSchema = z.object({
   price: z.coerce
     .number()
     .min(1, { message: "Price must be at least 1" }),
+  stock: z.coerce
+    .number()
+    .min(1, { message: "Stock must be at least 1" }),
   imageUrl: z.string().optional(),
   imagePublicId: z.string().optional(),
 });
