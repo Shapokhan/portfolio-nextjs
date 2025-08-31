@@ -110,6 +110,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       formData.append('name', data.name);
       formData.append('description', data.description || '');
       formData.append('price', data.price?.toString() || '');
+      formData.append('stock', data.stock?.toString() || '');
 
       const file = fileInputRef.current?.files?.[0];
       if (file) {

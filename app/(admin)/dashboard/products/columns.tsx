@@ -121,7 +121,6 @@ export const columns: ColumnDef<Product>[] = [
     id: 'actions',
     cell: ({ row }) => {
       const product = row.original;
-      console.log(product);
 
       const [isDeleting, setIsDeleting] = useState(false);
       const [isDetailOpen, setIsDetailOpen] = useState(false);
